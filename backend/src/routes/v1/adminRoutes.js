@@ -104,6 +104,13 @@ router.put('/clients/:id',
  */
 router.delete('/clients/:id', adminController.deleteClient);
 
+/**
+ * @route GET /api/v1/admin/clients/:id/stats
+ * @desc Get client usage statistics
+ * @access Protected (Admin)
+ */
+router.get('/clients/:id/stats', adminController.getClientStats);
+
 // ==================== WALLET MANAGEMENT ROUTES ====================
 
 /**

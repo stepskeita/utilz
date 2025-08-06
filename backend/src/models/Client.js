@@ -1,7 +1,15 @@
 import { Model, DataTypes } from 'sequelize';
 import { sequelize } from '../config/database.js';
+import bcrypt from 'bcrypt';
 
-class Client extends Model { }
+class Client extends Model {
+  /**
+   * Compare password with hashed password
+   */
+  async comparePassword(password) {
+    return bcrypt.compare(password, this.password);
+  }
+}
 
 Client.init({
   id: {
@@ -83,7 +91,21 @@ Client.init({
   sequelize,
   modelName: 'Client',
   tableName: 'clients',
-  timestamps: true
+  timestamps: true,
+  hooks: {
+    beforeCreate: async (client) => {
+      if (client.password) {
+        const salt = await bcrypt.genSalt(10);
+        client.password = await bcrypt.hash(client.password, salt);
+      }
+    },
+    beforeUpdate: async (client) => {
+      if (client.changed('password')) {
+        const salt = await bcrypt.genSalt(10);
+        client.password = await bcrypt.hash(client.password, salt);
+      }
+    }
+  }
 });
 
 

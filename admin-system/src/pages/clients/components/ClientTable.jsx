@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FiEdit, FiTrash2, FiEye } from "react-icons/fi";
 import moment from "moment";
 
-const ClientTable = ({ clients = [], isLoading = false, onEdit }) => {
+const ClientTable = ({ clients = [], isPending = false, onEdit }) => {
   const navigate = useNavigate();
 
   const getStatusBadge = (isActive) => (
@@ -36,7 +36,8 @@ const ClientTable = ({ clients = [], isLoading = false, onEdit }) => {
 
   const getWalletBalance = (client) => {
     if (!client.wallet) return "N/A";
-    return `${client.wallet.balance || 0}`;
+    const balance = parseFloat(client.wallet.balance || 0);
+    return `D${balance.toFixed(2)}`;
   };
 
   return (
@@ -72,7 +73,7 @@ const ClientTable = ({ clients = [], isLoading = false, onEdit }) => {
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
+            {isPending ? (
               <tr>
                 <td colSpan={8} className="px-6 py-4 text-center">
                   Loading...

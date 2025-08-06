@@ -11,7 +11,10 @@ export const useGetClientsQuery = (filters) => useQuery({
         ...filters,
       },
     });
-    return res.data?.data || {};
+    return {
+      data: res.data?.data?.clients || [],
+      pagination: res.data?.data?.pagination || {}
+    };
   },
 
 });
@@ -21,7 +24,9 @@ export const useGetClientByIdQuery = (clientId) => useQuery({
   queryKey: ['client', clientId],
   queryFn: async () => {
     const res = await API.get(`/admin/clients/${clientId}`);
-    return res.data?.data;
+    return {
+      data: res.data?.data || null
+    };
   },
   enabled: !!clientId,
 
@@ -38,6 +43,10 @@ export const useCreateClientMutation = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['clients']);
+      toast.success('Client created successfully');
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || 'Failed to create client');
     },
 
   });
@@ -54,6 +63,11 @@ export const useUpdateClientMutation = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['clients']);
+      queryClient.invalidateQueries(['client']);
+      toast.success('Client updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || 'Failed to update client');
     },
 
   });
@@ -70,6 +84,10 @@ export const useDeleteClientMutation = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['clients']);
+      toast.success('Client deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || 'Failed to delete client');
     },
 
   });
@@ -82,7 +100,7 @@ export const useGetClientUsageStatsQuery = (clientId, dateRange) => useQuery({
     const res = await API.get(`/admin/clients/${clientId}/stats`, {
       params: dateRange
     });
-    return res.data?.data;
+    return res.data?.data || {};
   },
   enabled: !!clientId,
 

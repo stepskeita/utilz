@@ -1,4 +1,5 @@
 import clientWalletService from '../services/clientWalletService.js';
+import { createClient as createClientService, getClientUsageStats } from '../services/clientService.js';
 import { Client, ApiKey, UtilityTransaction, sequelize } from '../models/index.js';
 import createError from 'http-errors';
 import { Op } from 'sequelize';
@@ -73,7 +74,7 @@ class AdminController {
           },
           {
             model: ApiKey,
-            as: 'apiKeys'
+            as: 'ApiKeys'
           }
         ]
       });
@@ -97,13 +98,18 @@ class AdminController {
   async createClient(req, res, next) {
     try {
       const clientData = req.body;
+      const initialWalletBalance = clientData.initialWalletBalance || 0;
 
-      const client = await Client.create(clientData);
+      // Use the client service to create client with proper password handling and wallet creation
+      const result = await createClientService(clientData, initialWalletBalance);
 
       res.status(201).json({
         success: true,
-        message: 'Client created successfully',
-        data: client
+        message: 'Client created successfully with default password "password"',
+        data: {
+          client: result.client,
+          wallet: result.wallet
+        }
       });
     } catch (error) {
       next(error);
@@ -154,6 +160,25 @@ class AdminController {
       res.status(200).json({
         success: true,
         message: 'Client deleted successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get client usage statistics
+   */
+  async getClientStats(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { startDate, endDate } = req.query;
+
+      const stats = await getClientUsageStats(id, { startDate, endDate });
+
+      res.status(200).json({
+        success: true,
+        data: stats
       });
     } catch (error) {
       next(error);
@@ -775,6 +800,7 @@ export const {
   createClient,
   updateClient,
   deleteClient,
+  getClientStats,
   getAllTopUpRequests,
   getTopUpRequest,
   approveTopUpRequest,

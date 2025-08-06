@@ -17,7 +17,7 @@ const ClientDetailsPage = () => {
 
   const {
     data: clientData,
-    isLoading,
+    isPending,
     error,
   } = useGetClientByIdQuery(clientId);
   const { data: statsData } = useGetClientUsageStatsQuery(clientId, {
@@ -27,7 +27,7 @@ const ClientDetailsPage = () => {
 
   const client = clientData?.data;
 
-  if (isLoading) return <IsLoading />;
+  if (isPending) return <IsLoading />;
   if (error) return <IsError message="Failed to load client details" />;
   if (!client) return <IsError message="Client not found" />;
 
@@ -78,7 +78,9 @@ const ClientDetailsPage = () => {
         </div>
         <div className="flex items-center gap-2">
           <CustomButton
-            onClick={() => navigate(`/clients/edit/${clientId}`)}
+            onClick={() =>
+              navigate("/clients", { state: { editClient: client } })
+            }
             className="flex items-center gap-2"
           >
             <FiEdit className="w-4 h-4" />
@@ -316,7 +318,9 @@ const ClientDetailsPage = () => {
             </h2>
             <div className="space-y-3">
               <CustomButton
-                onClick={() => navigate(`/clients/edit/${clientId}`)}
+                onClick={() =>
+                  navigate("/clients", { state: { editClient: client } })
+                }
                 className="w-full flex items-center justify-center gap-2"
               >
                 <FiEdit className="w-4 h-4" />

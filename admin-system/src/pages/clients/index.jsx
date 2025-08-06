@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "react-router-dom";
 import { useGetClientsQuery } from "./clientQueries";
 import CustomButton from "../../components/generic/CustomButton";
 import ClientTable from "./components/ClientTable";
@@ -11,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const ClientsPage = () => {
   const queryClient = useQueryClient();
+  const location = useLocation();
   const [filters, setFilters] = React.useState({
     limit: 10,
     page: 1,
@@ -19,6 +21,16 @@ const ClientsPage = () => {
   const [selectedClient, setSelectedClient] = React.useState(null);
 
   const { data: clients, isPending, error } = useGetClientsQuery(filters);
+
+  // Handle edit client from navigation state
+  React.useEffect(() => {
+    if (location.state?.editClient) {
+      setSelectedClient(location.state.editClient);
+      setShowModal(true);
+      // Clear the state to prevent reopening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleEditClient = (client) => {
     setSelectedClient(client);
@@ -59,7 +71,7 @@ const ClientsPage = () => {
 
       <ClientTable
         clients={clients?.data || []}
-        isLoading={isPending}
+        isPending={isPending}
         error={error}
         onEdit={handleEditClient}
       />

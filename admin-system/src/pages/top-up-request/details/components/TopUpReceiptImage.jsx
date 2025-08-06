@@ -23,7 +23,6 @@ const TopUpReceiptImage = ({ receiptBase64, receiptFileName }) => {
             />
           </a>
         </Fancybox>
-        <div className="mt-2 text-sm text-gray-500">{receiptFileName}</div>
       </div>
     </CustomCard>
   );

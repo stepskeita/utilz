@@ -19,7 +19,7 @@ class ClientController {
           },
           {
             model: ApiKey,
-            as: 'apiKeys',
+            as: 'ApiKeys',
             attributes: ['id', 'name', 'isActive', 'isAirtime', 'isCashpower', 'isBoth', 'createdAt']
           }
         ]
