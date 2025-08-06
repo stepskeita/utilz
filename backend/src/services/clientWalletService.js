@@ -1,7 +1,10 @@
 import createError from 'http-errors';
-import { ClientWallet, WalletTransaction, UtilityTransaction, Client, sequelize } from '../models/index.js';
+import { ClientWallet, WalletTransaction, UtilityTransaction, Client, ClientTopUpRequest, User, sequelize } from '../models/index.js';
 import emailService from './emailService.js';
 import moment from 'moment';
+import { Op } from 'sequelize';
+import fs from 'fs/promises';
+import path from 'path';
 
 class ClientWalletService {
   /**
@@ -317,6 +320,362 @@ class ClientWalletService {
         totalAmount: totalAmount || 0,
         successTransactions,
         period
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get client's own top-up requests
+   */
+  async getTopUpRequests(clientId, options = {}) {
+    try {
+      const { page = 1, limit = 20, status } = options;
+      const whereClause = { clientId };
+
+      if (status) {
+        whereClause.status = status;
+      }
+
+      const offset = (parseInt(page) - 1) * parseInt(limit);
+
+      const { count, rows } = await ClientTopUpRequest.findAndCountAll({
+        where: whereClause,
+        include: [
+          {
+            model: User,
+            as: 'processor',
+            attributes: ['id', 'email', 'role'],
+            required: false
+          }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: parseInt(limit),
+        offset: offset
+      });
+
+      return {
+        topUpRequests: rows,
+        pagination: {
+          currentPage: parseInt(page),
+          limit: parseInt(limit),
+          totalItems: count,
+          totalPages: Math.ceil(count / parseInt(limit))
+        }
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get all top-up requests (Admin)
+   */
+  async getAllTopUpRequests(filters = {}) {
+    try {
+      const { page = 1, limit = 10, status, clientId } = filters;
+      const whereClause = {};
+
+      if (status) {
+        whereClause.status = status;
+      }
+
+      if (clientId) {
+        whereClause.clientId = clientId;
+      }
+
+      const offset = (parseInt(page) - 1) * parseInt(limit);
+
+      const { count, rows } = await ClientTopUpRequest.findAndCountAll({
+        where: whereClause,
+        include: [
+          {
+            model: Client,
+            as: 'client',
+            attributes: ['id', 'name', 'email']
+          },
+          {
+            model: User,
+            as: 'processor',
+            attributes: ['id', 'email', 'role'],
+            required: false
+          }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: parseInt(limit),
+        offset: offset
+      });
+
+      return {
+        topUpRequests: rows,
+        pagination: {
+          currentPage: parseInt(page),
+          limit: parseInt(limit),
+          totalItems: count,
+          totalPages: Math.ceil(count / parseInt(limit))
+        }
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get specific top-up request (Admin)
+   */
+  async getTopUpRequest(requestId) {
+    try {
+      const request = await ClientTopUpRequest.findByPk(requestId, {
+        include: [
+          {
+            model: Client,
+            as: 'client',
+            attributes: ['id', 'name', 'email']
+          },
+          {
+            model: User,
+            as: 'processor',
+            attributes: ['id', 'email', 'role'],
+            required: false
+          }
+        ]
+      });
+
+      if (!request) {
+        throw createError(404, 'Top-up request not found');
+      }
+
+      // Convert to plain object for modification
+      const requestData = request.toJSON();
+
+      // Add receiptBase64 if receipt file exists
+      if (requestData.receiptFilePath && requestData.receiptMimeType) {
+        try {
+          requestData.receiptBase64 = await this.getReceiptAsBase64(
+            requestData.receiptFilePath,
+            requestData.receiptMimeType
+          );
+        } catch (error) {
+          // If file not found, set receiptBase64 to null but don't fail the request
+          console.warn(`Receipt file not found for request ${requestId}:`, error.message);
+          requestData.receiptBase64 = null;
+        }
+      } else {
+        requestData.receiptBase64 = null;
+      }
+
+      return requestData;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Create top-up request
+   */
+  async createTopUpRequest(clientId, requestData, receiptFile) {
+    try {
+      const { requestedAmount, paymentMethod, paymentReference, clientNotes } = requestData;
+
+      // Handle file upload - save to disk
+      const receiptFileName = receiptFile.name;
+      const timestamp = Date.now();
+      const safeFileName = `${timestamp}_${receiptFileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const receiptFilePath = `/uploads/receipts/${safeFileName}`;
+      const fullFilePath = path.join(process.cwd(), 'uploads', 'receipts', safeFileName);
+
+      // Ensure uploads directory exists
+      const uploadsDir = path.join(process.cwd(), 'uploads', 'receipts');
+      await fs.mkdir(uploadsDir, { recursive: true });
+
+      // Save file to disk
+      await fs.writeFile(fullFilePath, receiptFile.data);
+
+      const topUpRequest = await ClientTopUpRequest.create({
+        clientId,
+        requestedAmount: parseFloat(requestedAmount),
+        receiptFileName,
+        receiptFilePath,
+        receiptFileSize: receiptFile.size,
+        receiptMimeType: receiptFile.mimetype,
+        paymentMethod,
+        paymentReference,
+        clientNotes,
+        status: 'pending'
+      });
+
+      // Send notification to admin
+      await emailService.sendAdminNotification(
+        'NEW_TOPUP_REQUEST',
+        {
+          clientId,
+          requestId: topUpRequest.id,
+          requestedAmount,
+          paymentMethod,
+          paymentReference
+        }
+      );
+
+      return topUpRequest;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Approve top-up request
+   */
+  async approveTopUpRequest(requestId, adminId, approvalData) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const { approvedAmount, adminNotes } = approvalData;
+
+      const request = await ClientTopUpRequest.findByPk(requestId, { transaction });
+
+      if (!request) {
+        throw createError(404, 'Top-up request not found');
+      }
+
+      if (request.status !== 'pending') {
+        throw createError(400, 'Request has already been processed');
+      }
+
+      // Update the request
+      await request.update({
+        status: 'approved',
+        approvedAmount: parseFloat(approvedAmount),
+        adminNotes,
+        processedBy: adminId,
+        processedAt: new Date()
+      }, { transaction });
+
+      // Add funds to client wallet
+      const wallet = await ClientWallet.findOne({
+        where: { clientId: request.clientId },
+        transaction,
+        lock: transaction.LOCK.UPDATE
+      });
+
+      if (!wallet) {
+        throw createError(404, 'Client wallet not found');
+      }
+
+      const currentBalance = parseFloat(wallet.balance);
+      const newBalance = currentBalance + parseFloat(approvedAmount);
+
+      await wallet.update({
+        balance: newBalance,
+        lastTopupDate: new Date()
+      }, { transaction });
+
+      // Create wallet transaction record
+      await WalletTransaction.create({
+        walletId: wallet.id,
+        clientId: request.clientId,
+        type: 'credit',
+        amount: parseFloat(approvedAmount),
+        balanceBefore: currentBalance,
+        balanceAfter: newBalance,
+        description: `Top-up request approved - ${request.id}`,
+        reference: `TOPUP-APPROVED-${request.id}`,
+        performedBy: adminId
+      }, { transaction });
+
+      await transaction.commit();
+
+      // Send notification to client
+      await emailService.sendClientNotification(
+        request.clientId,
+        'TOPUP_APPROVED',
+        {
+          requestId,
+          approvedAmount,
+          newBalance,
+          adminNotes
+        }
+      );
+
+      return {
+        message: 'Top-up request approved successfully',
+        approvedAmount: parseFloat(approvedAmount),
+        newBalance
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  /**
+   * Get receipt file as base64 string
+   */
+  async getReceiptAsBase64(receiptFilePath, mimeType) {
+    try {
+      // Convert relative path to absolute path
+      const fullFilePath = path.join(process.cwd(), receiptFilePath.replace(/^\//, ''));
+
+      // Check if file exists
+      try {
+        await fs.access(fullFilePath);
+      } catch (error) {
+        throw createError(404, 'Receipt file not found on disk');
+      }
+
+      // Read file and convert to base64
+      const fileBuffer = await fs.readFile(fullFilePath);
+      const base64String = fileBuffer.toString('base64');
+
+      // Return data URL format for direct use in img src
+      return `data:${mimeType};base64,${base64String}`;
+    } catch (error) {
+      if (error.status === 404) {
+        throw error;
+      }
+      throw createError(500, 'Failed to read receipt file');
+    }
+  }
+
+  /**
+   * Reject top-up request
+   */
+  async rejectTopUpRequest(requestId, adminId, rejectionData) {
+    try {
+      const { rejectionReason, adminNotes } = rejectionData;
+
+      const request = await ClientTopUpRequest.findByPk(requestId);
+
+      if (!request) {
+        throw createError(404, 'Top-up request not found');
+      }
+
+      if (request.status !== 'pending') {
+        throw createError(400, 'Request has already been processed');
+      }
+
+      await request.update({
+        status: 'rejected',
+        rejectionReason,
+        adminNotes,
+        processedBy: adminId,
+        processedAt: new Date()
+      });
+
+      // Send notification to client
+      await emailService.sendClientNotification(
+        request.clientId,
+        'TOPUP_REJECTED',
+        {
+          requestId,
+          rejectionReason,
+          adminNotes
+        }
+      );
+
+      return {
+        message: 'Top-up request rejected',
+        rejectionReason
       };
     } catch (error) {
       throw error;

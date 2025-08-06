@@ -37,26 +37,8 @@ export const useCreateTopUpRequestMutation = () => {
     }
   });
 };
-export const useApproveTopUpRequestMutation = (requestId) => {
-  return useMutation({
-    mutationKey: ['approveTopUpRequest', requestId],
-    mutationFn: async () => {
-      const response = await API.post(`/client/wallet/top-up-request/${requestId}/approve`);
-      return response.data?.data;
-    }
-  });
-};
-
-
-export const useRejectTopUpRequestMutation = (requestId) => {
-  return useMutation({
-    mutationKey: ['rejectTopUpRequest', requestId],
-    mutationFn: async () => {
-      const response = await API.post(`/client/wallet/top-up-request/${requestId}/reject`);
-      return response.data?.data;
-    }
-  });
-}
+// Note: Clients cannot approve or reject their own requests
+// These actions are only available to administrators
 
 // Delete a top-up request (client)
 export const useDeleteTopUpRequestMutation = () => {

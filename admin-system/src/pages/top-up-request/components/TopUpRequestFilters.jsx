@@ -8,6 +8,11 @@ import { useGetClientsQuery } from "../topupRequestQueries";
 const TopUpRequestFilters = ({ filters, setFilters }) => {
   const getClientsQuery = useGetClientsQuery();
 
+  // Ensure clients data is an array
+  const clients = Array.isArray(getClientsQuery.data)
+    ? getClientsQuery.data
+    : [];
+
   return (
     <CustomCard className="flex justify-between  p-4">
       <h2 className="text-lg font-semibold">Filters</h2>
@@ -18,20 +23,17 @@ const TopUpRequestFilters = ({ filters, setFilters }) => {
           value={{
             value: filters.clientId || "",
             label:
-              getClientsQuery.data?.find(
-                (client) => client.id === filters.clientId
-              )?.name || "Choose Client",
+              clients.find((client) => client.id === filters.clientId)?.name ||
+              "Choose Client",
           }}
           onChange={(selectedOption) =>
             setFilters({ ...filters, clientId: selectedOption.value })
           }
           placeholder={"Choose Client"}
-          options={
-            getClientsQuery.data?.map((client) => ({
-              value: client.id,
-              label: client.name,
-            })) || []
-          }
+          options={clients.map((client) => ({
+            value: client.id,
+            label: client.name,
+          }))}
           hideErrorComponent={true}
         />
         <CustomSelectInput

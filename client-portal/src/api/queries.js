@@ -113,22 +113,17 @@ export const useGetCashpowerTransactionsQuery = (filters = {}) =>
 
 // ==================== API KEY MANAGEMENT QUERIES ====================
 
-export const useGetApiKeysQuery = () =>
+export const useGetApiKeysQuery = (filters = {}) =>
   useQuery({
-    queryKey: ['api-keys'],
+    queryKey: ['api-keys', filters],
     queryFn: async () => {
-      const res = await API.get('/client/api-keys');
+      const params = new URLSearchParams(filters).toString();
+      const res = await API.get(`/client/api-keys?${params}`);
       return res.data?.data;
     },
   });
 
-export const useCreateApiKeyMutation = () =>
-  useMutation({
-    mutationFn: async (apiKeyData) => {
-      const res = await API.post('/client/api-keys', apiKeyData);
-      return res.data;
-    },
-  });
+// Client API key creation removed - only admins can create API keys
 
 export const useUpdateApiKeyMutation = () =>
   useMutation({

@@ -6,12 +6,12 @@ import toast from "react-hot-toast";
 export const useGetClientsQuery = (filters) => useQuery({
   queryKey: ['clients', filters],
   queryFn: async () => {
-    const res = await API.get('/clients', {
+    const res = await API.get('/admin/clients', {
       params: {
         ...filters,
       },
     });
-    return res.data;
+    return res.data?.data || {};
   },
 
 });
@@ -20,8 +20,8 @@ export const useGetClientsQuery = (filters) => useQuery({
 export const useGetClientByIdQuery = (clientId) => useQuery({
   queryKey: ['client', clientId],
   queryFn: async () => {
-    const res = await API.get(`/clients/${clientId}`);
-    return res.data;
+    const res = await API.get(`/admin/clients/${clientId}`);
+    return res.data?.data;
   },
   enabled: !!clientId,
 
@@ -33,8 +33,8 @@ export const useCreateClientMutation = () => {
 
   return useMutation({
     mutationFn: async (clientData) => {
-      const res = await API.post('/clients', clientData);
-      return res.data;
+      const res = await API.post('/admin/clients', clientData);
+      return res.data?.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['clients']);
@@ -49,8 +49,8 @@ export const useUpdateClientMutation = () => {
 
   return useMutation({
     mutationFn: async ({ clientId, clientData }) => {
-      const res = await API.put(`/clients/${clientId}`, clientData);
-      return res.data;
+      const res = await API.put(`/admin/clients/${clientId}`, clientData);
+      return res.data?.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['clients']);
@@ -65,8 +65,8 @@ export const useDeleteClientMutation = () => {
 
   return useMutation({
     mutationFn: async (clientId) => {
-      const res = await API.delete(`/clients/${clientId}`);
-      return res.data;
+      const res = await API.delete(`/admin/clients/${clientId}`);
+      return res.data?.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['clients']);
@@ -79,10 +79,10 @@ export const useDeleteClientMutation = () => {
 export const useGetClientUsageStatsQuery = (clientId, dateRange) => useQuery({
   queryKey: ['client-stats', clientId, dateRange],
   queryFn: async () => {
-    const res = await API.get(`/clients/${clientId}/stats`, {
+    const res = await API.get(`/admin/clients/${clientId}/stats`, {
       params: dateRange
     });
-    return res.data;
+    return res.data?.data;
   },
   enabled: !!clientId,
 

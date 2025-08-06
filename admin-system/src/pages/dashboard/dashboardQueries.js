@@ -6,23 +6,24 @@ export const useGetGamSwitchBalance = () =>
   useQuery({
     queryKey: ['gamswitch-balance'],
     queryFn: async () => {
-      const res = await API.get('/gamswitch/balance');
+      const res = await API.get('/admin/balance/status');
       return res.data.data;
     },
   });
 
 
 
-export const useRecentTransactionsQuery = (limit = 5) =>
+export const useRecentTopUpRequestsQuery = (limit = 5) =>
   useQuery({
-    queryKey: ['recent-transactions', limit],
+    queryKey: ['recent-topup-requests', limit],
     queryFn: async () => {
-      const res = await API.get(`/topup/history`, {
+      const res = await API.get(`/admin/top-up-requests`, {
         params: {
           limit,
+          page: 1,
         },
       });
 
-      return res.data.data || [];
+      return res.data?.data || {};
     },
   });

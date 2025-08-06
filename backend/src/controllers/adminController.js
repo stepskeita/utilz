@@ -497,13 +497,15 @@ class AdminController {
    */
   async getAllApiKeys(req, res, next) {
     try {
-      const { page, limit, search, clientId } = req.query;
+      const { page, limit, search, clientId, status, service } = req.query;
 
       const options = {
         page: page ? parseInt(page) : 1,
         limit: limit ? parseInt(limit) : 50,
         search,
-        clientId
+        clientId,
+        status,
+        service
       };
 
       const whereClause = {
@@ -513,7 +515,15 @@ class AdminController {
             { key: { [Op.like]: `%${search}%` } }
           ]
         }),
-        ...(clientId && { clientId })
+        ...(clientId && { clientId }),
+        ...(status && {
+          isActive: status === 'active'
+        }),
+        ...(service && {
+          ...(service === 'airtime' && { isAirtime: true, isBoth: false }),
+          ...(service === 'cashpower' && { isCashpower: true, isBoth: false }),
+          ...(service === 'both' && { isBoth: true })
+        })
       };
 
       const apiKeys = await ApiKey.findAndCountAll({
@@ -521,7 +531,6 @@ class AdminController {
         include: [
           {
             model: Client,
-            as: 'client',
             attributes: ['id', 'name', 'email']
           }
         ],
@@ -595,7 +604,8 @@ class AdminController {
       const apiKey = await ApiKey.create({
         ...apiKeyData,
         clientId,
-        key: ApiKey.generateKey()
+        key: ApiKey.generateKey(),
+        secretKey: ApiKey.generateSecretKey()
       });
 
       res.status(201).json({
@@ -669,7 +679,8 @@ class AdminController {
       }
 
       const newKey = ApiKey.generateKey();
-      await apiKey.update({ key: newKey });
+      const newSecretKey = ApiKey.generateSecretKey();
+      await apiKey.update({ key: newKey, secretKey: newSecretKey });
 
       res.status(200).json({
         success: true,

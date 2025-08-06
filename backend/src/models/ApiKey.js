@@ -41,7 +41,7 @@ ApiKey.init({
   },
   isActive: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
+    defaultValue: false
   },
   expiresAt: {
     type: DataTypes.DATE,

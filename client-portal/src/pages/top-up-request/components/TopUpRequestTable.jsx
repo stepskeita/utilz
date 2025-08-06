@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import moment from "moment";
 
-const TopUpRequestTable = ({ topUpRequests = [], isLoading = false }) => {
+const TopUpRequestTable = ({ topUpRequests = [], isPending = false }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const deleteMutation = useDeleteTopUpRequestMutation();
@@ -44,7 +44,7 @@ const TopUpRequestTable = ({ topUpRequests = [], isLoading = false }) => {
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
+            {isPending ? (
               <tr>
                 <td colSpan={5} className="px-6 py-4 text-center">
                   Loading...
@@ -77,9 +77,7 @@ const TopUpRequestTable = ({ topUpRequests = [], isLoading = false }) => {
                   <td className="px-6 py-4">
                     <button
                       className="text-blue-600  mr-4"
-                      onClick={() =>
-                        navigate(`/top-up-request/details`, { state: request })
-                      }
+                      onClick={() => navigate(`/top-up-request/${request.id}`)}
                     >
                       <FaEye className="inline mr-1" />
                       View Details

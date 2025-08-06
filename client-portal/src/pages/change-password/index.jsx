@@ -96,10 +96,10 @@ const ChangePasswordPage = () => {
                 type="submit"
                 className=" w-[150px]"
                 disabled={
-                  formik.isSubmitting || changePasswordMutation.isLoading
+                  formik.isSubmitting || changePasswordMutation.isPending
                 }
               >
-                {formik.isSubmitting || changePasswordMutation.isLoading
+                {formik.isSubmitting || changePasswordMutation.isPending
                   ? "Updating..."
                   : "Update Password"}
               </CustomButton>

@@ -2,6 +2,7 @@ import React from "react";
 import { twMerge } from "tailwind-merge";
 import CustomButton from "../../../components/generic/CustomButton";
 import { useNavigate } from "react-router-dom";
+import { formatCurrency } from "../../../helperFunctions";
 
 const WalletTransactions = ({
   transactionsData = [],
@@ -57,12 +58,13 @@ const WalletTransactions = ({
                         : "text-red-600 font-semibold"
                     )}
                   >
-                    GMD{" "}
                     {tx.type === "credit"
-                      ? `+${tx.amount}`
-                      : `-${Math.abs(tx.amount)}`}
+                      ? formatCurrency(tx.amount, "GMD +")
+                      : formatCurrency(Math.abs(tx.amount), "GMD -")}
                   </td>
-                  <td className="px-6 py-4">GMD {tx?.balanceBefore}</td>
+                  <td className="px-6 py-4">
+                    {formatCurrency(tx?.balanceBefore, "GMD ")}
+                  </td>
                   <td className="px-6 py-4">{tx?.description}</td>
                 </tr>
               ))

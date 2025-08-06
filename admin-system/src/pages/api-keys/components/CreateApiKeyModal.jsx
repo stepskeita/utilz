@@ -191,7 +191,11 @@ const CreateApiKeyModal = ({ isOpen, onClose, onSuccess }) => {
             </CustomButton>
             <CustomButton
               type="submit"
-              disabled={createApiKeyMutation.isPending}
+              disabled={
+                createApiKeyMutation.isPending ||
+                !formik.isValid ||
+                !formik.dirty
+              }
               className="bg-blue-600 hover:bg-blue-700"
             >
               {createApiKeyMutation.isPending

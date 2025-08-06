@@ -208,6 +208,45 @@ export const topUpRequestQuerySchema = Yup.object({
     .nullable()
 });
 
+// Top-up request validation schemas
+export const createTopUpRequestSchema = Yup.object({
+  requestedAmount: Yup.number()
+    .required('Requested amount is required')
+    .positive('Amount must be positive')
+    .min(10, 'Minimum amount is 10')
+    .max(10000, 'Maximum amount is 10,000'),
+  paymentMethod: Yup.string()
+    .required('Payment method is required')
+    .oneOf(['bank_transfer', 'mobile_money', 'cash'], 'Invalid payment method'),
+  paymentReference: Yup.string()
+    .max(100, 'Payment reference cannot exceed 100 characters')
+    .nullable(),
+  clientNotes: Yup.string()
+    .max(500, 'Notes cannot exceed 500 characters')
+    .nullable()
+});
+
+export const approveTopUpRequestSchema = Yup.object({
+  approvedAmount: Yup.number()
+    .required('Approved amount is required')
+    .positive('Amount must be positive')
+    .min(1, 'Minimum approved amount is 1')
+    .max(10000, 'Maximum approved amount is 10,000'),
+  adminNotes: Yup.string()
+    .max(500, 'Admin notes cannot exceed 500 characters')
+    .nullable()
+});
+
+export const rejectTopUpRequestSchema = Yup.object({
+  rejectionReason: Yup.string()
+    .required('Rejection reason is required')
+    .min(10, 'Rejection reason must be at least 10 characters')
+    .max(500, 'Rejection reason cannot exceed 500 characters'),
+  adminNotes: Yup.string()
+    .max(500, 'Admin notes cannot exceed 500 characters')
+    .nullable()
+});
+
 // UUID validation
 export const uuidSchema = Yup.object({
   id: Yup.string()
@@ -230,5 +269,8 @@ export default {
   paginationSchema,
   transactionQuerySchema,
   topUpRequestQuerySchema,
+  createTopUpRequestSchema,
+  approveTopUpRequestSchema,
+  rejectTopUpRequestSchema,
   uuidSchema
 };

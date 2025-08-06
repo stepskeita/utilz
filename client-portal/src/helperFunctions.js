@@ -141,3 +141,24 @@ export const errorSweetAlert = (message, options = {}) => {
 
 
 export const uuidV4 = () => v4()
+
+/**
+ * Format currency value with proper decimal handling
+ * Handles string decimals from database and converts to proper currency format
+ * @param {string|number} value - The value to format
+ * @param {string} currency - Currency symbol (default: 'D')
+ * @returns {string} Formatted currency string
+ */
+export const formatCurrency = (value, currency = 'D') => {
+  if (value === null || value === undefined) {
+    return `${currency}0.00`;
+  }
+
+  const numericValue = parseFloat(value);
+
+  if (isNaN(numericValue)) {
+    return `${currency}0.00`;
+  }
+
+  return `${currency}${numericValue.toFixed(2)}`;
+}

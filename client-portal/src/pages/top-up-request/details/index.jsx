@@ -1,16 +1,15 @@
 import React, { useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTopUpRequestDetailsQuery } from "../topupRequestQueries";
 import TopUpRequestInfo from "./components/TopUpRequestInfo";
 import TopUpReceiptImage from "./components/TopUpReceiptImage";
 
 const TopUpRequestDetails = () => {
-  const { state } = useLocation();
   const navigate = useNavigate();
-  const requestId = state?.id;
+  const { id: requestId } = useParams();
   const {
     data: request,
-    isLoading,
+    isPending,
     isError,
     error,
   } = useTopUpRequestDetailsQuery(requestId);
@@ -27,7 +26,7 @@ const TopUpRequestDetails = () => {
 
   return (
     <div className="max-w-2xl mx-auto py-8">
-      {isLoading && (
+      {isPending && (
         <div className="text-center text-gray-500">
           Loading top-up request details...
         </div>

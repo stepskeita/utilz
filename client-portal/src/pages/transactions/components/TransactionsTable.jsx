@@ -2,6 +2,7 @@ import React from "react";
 import { twMerge } from "tailwind-merge";
 import { useNavigate } from "react-router-dom";
 import moment from "moment/moment";
+import { formatCurrency } from "../../../helperFunctions";
 
 const TransactionsTable = ({
   transactions = [],
@@ -96,7 +97,7 @@ const TransactionsTable = ({
                     {tx.type === "cashpower" ? tx.meterNumber : tx.phoneNumber}
                   </td>
                   <td className="px-6 py-4 font-semibold">
-                    GMD {parseFloat(tx.amount).toFixed(2)}
+                    {formatCurrency(tx.amount, "GMD ")}
                   </td>
                   <td
                     className={twMerge(

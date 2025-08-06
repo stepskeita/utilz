@@ -9,7 +9,7 @@ const TopUpRequest = () => {
     page: 1,
     limit: 10,
   });
-  const { isLoading, data } = useTopUpRequestsQuery(filters);
+  const { isPending, data } = useTopUpRequestsQuery(filters);
   console.log(data);
 
   return (
@@ -18,7 +18,10 @@ const TopUpRequest = () => {
         <h1 className="text-2xl font-semibold">Client Wallet Top Up Request</h1>
       </div>
       <TopUpRequestFilters filters={filters} setFilters={setFilters} />
-      <TopUpRequestTable topUpRequests={data?.requests} isLoading={isLoading} />
+      <TopUpRequestTable
+        topUpRequests={data?.topUpRequests}
+        isLoading={isPending}
+      />
       <CustomPagination
         pagination={data?.pagination}
         filters={filters}

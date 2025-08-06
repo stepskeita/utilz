@@ -18,7 +18,7 @@ const ClientsPage = () => {
   const [showModal, setShowModal] = React.useState(false);
   const [selectedClient, setSelectedClient] = React.useState(null);
 
-  const { data: clients, isLoading, error } = useGetClientsQuery(filters);
+  const { data: clients, isPending, error } = useGetClientsQuery(filters);
 
   const handleEditClient = (client) => {
     setSelectedClient(client);
@@ -59,7 +59,7 @@ const ClientsPage = () => {
 
       <ClientTable
         clients={clients?.data || []}
-        isLoading={isLoading}
+        isLoading={isPending}
         error={error}
         onEdit={handleEditClient}
       />

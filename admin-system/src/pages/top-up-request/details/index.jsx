@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   useApproveTopUpRequestMutation,
   useRejectTopUpRequestMutation,
@@ -17,9 +17,8 @@ import RejectRequestModal from "./components/RejectRequestModal";
 const TopUpRequestDetails = () => {
   const [openApproveModal, setOpenApproveModal] = React.useState(false);
   const [openRejectModal, setOpenRejectModal] = React.useState(false);
-  const { state } = useLocation();
   const navigate = useNavigate();
-  const requestId = state?.id;
+  const { id: requestId } = useParams();
   const {
     data: request,
     isLoading,

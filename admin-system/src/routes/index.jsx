@@ -27,7 +27,7 @@ const AppRoutes = () => (
       <Route path="/transactions" element={<TransactionsPage />} />
       <Route path="/change-password" element={<ChangePasswordPage />} />
       <Route path="/top-up-request" element={<TopUpRequest />} />
-      <Route path="/top-up-request/details" element={<TopUpRequestDetails />} />
+      <Route path="/top-up-request/:id" element={<TopUpRequestDetails />} />
       <Route path="/clients" element={<ClientsPage />} />
       <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
       <Route path="/api-keys" element={<ApiKeysPage />} />

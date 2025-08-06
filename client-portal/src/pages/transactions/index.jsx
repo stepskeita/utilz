@@ -14,7 +14,7 @@ const TransactionsPage = () => {
   });
 
   const [openRequestModal, setOpenRequestModal] = React.useState(false);
-  const { isLoading, data } = useGetTransactionHistoryQuery(filters);
+  const { isPending, data } = useGetTransactionHistoryQuery(filters);
   const navigate = useNavigate();
 
   return (
@@ -33,7 +33,7 @@ const TransactionsPage = () => {
       <TransactionFilters filters={filters} setFilters={setFilters} />
 
       <TransactionsTable
-        isLoading={isLoading}
+        isLoading={isPending}
         transactions={data?.transactions || []}
         transactionType={filters.type}
       />

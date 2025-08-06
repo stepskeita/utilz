@@ -5,7 +5,7 @@ export const useTopUpRequestsQuery = (filters) => {
   return useQuery({
     queryKey: ['topUpRequests', filters],
     queryFn: async () => {
-      const response = await API.get('/client/wallet/admin/top-up-requests', { params: filters });
+      const response = await API.get('/admin/top-up-requests', { params: filters });
       return response.data?.data;
     }
   });
@@ -15,8 +15,8 @@ export const useGetClientsQuery = () =>
   useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
-      const res = await API.get(`/clients`);
-      return res.data?.data;
+      const res = await API.get(`/admin/clients`);
+      return res.data?.data?.clients || [];
     },
   });
 
@@ -24,7 +24,7 @@ export const useTopUpRequestDetailsQuery = (requestId) => {
   return useQuery({
     queryKey: ['topUpRequestDetails', requestId],
     queryFn: async () => {
-      const response = await API.get(`/client/wallet/admin/top-up-request/${requestId}`);
+      const response = await API.get(`/admin/top-up-requests/${requestId}`);
       return response.data?.data;
     },
     enabled: !!requestId
@@ -48,7 +48,7 @@ export const useApproveTopUpRequestMutation = () => {
   return useMutation({
     mutationKey: ['approveTopUpRequest'],
     mutationFn: async (formData) => {
-      const response = await API.post(`/client/wallet/admin/top-up-request/${formData.id}/approve`, formData);
+      const response = await API.post(`/admin/top-up-requests/${formData.id}/approve`, formData);
       return response.data?.data;
     }
   });
@@ -58,7 +58,7 @@ export const useRejectTopUpRequestMutation = () => {
   return useMutation({
     mutationKey: ['rejectTopUpRequest'],
     mutationFn: async (formData) => {
-      const response = await API.post(`/client/wallet/admin/top-up-request/${formData.id}/reject`, formData);
+      const response = await API.post(`/admin/top-up-requests/${formData.id}/reject`, formData);
       return response.data?.data;
     }
   });

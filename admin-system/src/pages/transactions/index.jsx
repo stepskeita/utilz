@@ -13,7 +13,7 @@ const TransactionsPage = () => {
     type: "all", // 'all', 'airtime', 'cashpower'
   });
 
-  const { isLoading, data } = useGetTransactionsQuery(filters);
+  const { isPending, data } = useGetTransactionsQuery(filters);
   const navigate = useNavigate();
 
   console.log("Transactions data:", data);
@@ -33,7 +33,7 @@ const TransactionsPage = () => {
       <TransactionFilters filters={filters} setFilters={setFilters} />
 
       <TransactionsTable
-        isLoading={isLoading}
+        isLoading={isPending}
         transactions={data?.transactions || []}
         transactionType={filters.type}
       />

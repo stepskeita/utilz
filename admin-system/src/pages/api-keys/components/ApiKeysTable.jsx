@@ -1,43 +1,92 @@
-import React from "react";
+import React, { useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { useNavigate } from "react-router-dom";
 import moment from "moment/moment";
-import { FaEdit, FaTrash, FaKey } from "react-icons/fa";
+import {
+  FaEdit,
+  FaTrash,
+  FaKey,
+  FaCopy,
+  FaEye,
+  FaEyeSlash,
+} from "react-icons/fa";
+import EditApiKeyModal from "./EditApiKeyModal";
+import DeleteApiKeyModal from "./DeleteApiKeyModal";
+import RegenerateApiKeyModal from "./RegenerateApiKeyModal";
+import toast from "react-hot-toast";
+import copy from "copy-to-clipboard";
 
-const ApiKeysTable = ({ apiKeys = [], isLoading = false }) => {
-  const navigate = useNavigate();
+const ApiKeysTable = ({ apiKeys = [], isLoading = false, onRefetch }) => {
+  const [editingApiKey, setEditingApiKey] = useState(null);
+  const [deletingApiKey, setDeletingApiKey] = useState(null);
+  const [regeneratingApiKey, setRegeneratingApiKey] = useState(null);
+  const [visibleKeys, setVisibleKeys] = useState({});
 
-  const getStatusColor = (isActive) => {
-    return isActive ? "text-green-600" : "text-red-600";
+  const copyToClipboard = (text, label) => {
+    copy(text);
+    toast.success(`${label} copied to clipboard!`);
   };
 
-  const getServiceBadgeColor = (service) => {
-    switch (service) {
-      case "airtime":
-        return "bg-blue-100 text-blue-800";
-      case "cashpower":
-        return "bg-purple-100 text-purple-800";
-      case "both":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const toggleKeyVisibility = (keyId) => {
+    setVisibleKeys((prev) => ({
+      ...prev,
+      [keyId]: !prev[keyId],
+    }));
+  };
+
+  const maskKey = (key) => {
+    if (!key) return "";
+    return key.substring(0, 8) + "..." + key.substring(key.length - 8);
+  };
+
+  const getStatusBadge = (isActive) => {
+    return isActive ? (
+      <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+        Active
+      </span>
+    ) : (
+      <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+        Inactive
+      </span>
+    );
+  };
+
+  const getServiceChips = (apiKey) => {
+    const chips = [];
+
+    if (apiKey.isBoth || apiKey.isAirtime) {
+      chips.push(
+        <span
+          key="airtime"
+          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800"
+        >
+          Airtime
+        </span>
+      );
     }
-  };
 
-  const getServiceLabel = (isAirtime, isCashpower, isBoth) => {
-    if (isBoth) return "Both Services";
-    if (isAirtime && isCashpower) return "Both Services";
-    if (isAirtime) return "Airtime Only";
-    if (isCashpower) return "Electricity Only";
-    return "No Services";
-  };
+    if (apiKey.isBoth || apiKey.isCashpower) {
+      chips.push(
+        <span
+          key="cashpower"
+          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800"
+        >
+          Electricity
+        </span>
+      );
+    }
 
-  const getServiceType = (isAirtime, isCashpower, isBoth) => {
-    if (isBoth) return "both";
-    if (isAirtime && isCashpower) return "both";
-    if (isAirtime) return "airtime";
-    if (isCashpower) return "cashpower";
-    return "none";
+    if (!apiKey.isAirtime && !apiKey.isCashpower && !apiKey.isBoth) {
+      chips.push(
+        <span
+          key="none"
+          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800"
+        >
+          No Services
+        </span>
+      );
+    }
+
+    return <div className="flex flex-wrap gap-1">{chips}</div>;
   };
 
   return (
@@ -48,6 +97,9 @@ const ApiKeysTable = ({ apiKeys = [], isLoading = false }) => {
             <tr>
               <th className="px-6 py-3" scope="col">
                 Name
+              </th>
+              <th className="px-6 py-3" scope="col">
+                API Key
               </th>
               <th className="px-6 py-3" scope="col">
                 Client
@@ -72,23 +124,12 @@ const ApiKeysTable = ({ apiKeys = [], isLoading = false }) => {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center">
+                <td colSpan={8} className="px-6 py-4 text-center">
                   Loading...
                 </td>
               </tr>
             ) : apiKeys && apiKeys.length > 0 ? (
               apiKeys.map((apiKey) => {
-                const serviceType = getServiceType(
-                  apiKey.isAirtime,
-                  apiKey.isCashpower,
-                  apiKey.isBoth
-                );
-                const serviceLabel = getServiceLabel(
-                  apiKey.isAirtime,
-                  apiKey.isCashpower,
-                  apiKey.isBoth
-                );
-
                 return (
                   <tr
                     key={apiKey.id}
@@ -101,27 +142,30 @@ const ApiKeysTable = ({ apiKeys = [], isLoading = false }) => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2 max-w-xs">
+                        <code className="text-sm bg-gray-100 px-2 py-1 rounded font-mono text-gray-800 flex-1 min-w-0">
+                          {visibleKeys[apiKey.id]
+                            ? apiKey.key
+                            : maskKey(apiKey.key)}
+                        </code>
+
+                        <button
+                          onClick={() => copyToClipboard(apiKey.key, "API Key")}
+                          className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                          title="Copy API Key"
+                        >
+                          <FaCopy size={14} />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {apiKey.Client?.name || "N/A"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={twMerge(
-                          "px-2 py-1 text-xs font-medium rounded-full",
-                          getServiceBadgeColor(serviceType)
-                        )}
-                      >
-                        {serviceLabel}
-                      </span>
+                      {getServiceChips(apiKey)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={twMerge(
-                          "px-2 py-1 text-xs font-medium rounded-full",
-                          getStatusColor(apiKey.isActive)
-                        )}
-                      >
-                        {apiKey.isActive ? "Active" : "Inactive"}
-                      </span>
+                      {getStatusBadge(apiKey.isActive)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {moment(apiKey.createdAt).format("MMM DD, YYYY")}
@@ -134,32 +178,26 @@ const ApiKeysTable = ({ apiKeys = [], isLoading = false }) => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() =>
-                            navigate(`/api-keys/${apiKey.id}/edit`)
-                          }
+                          onClick={() => setEditingApiKey(apiKey)}
                           className="text-blue-600 hover:text-blue-800"
                           title="Edit API Key"
                         >
                           <FaEdit />
                         </button>
                         <button
-                          onClick={() =>
-                            navigate(`/api-keys/${apiKey.id}/regenerate`)
-                          }
+                          onClick={() => setRegeneratingApiKey(apiKey)}
                           className="text-orange-600 hover:text-orange-800"
                           title="Regenerate API Key"
                         >
                           <FaKey />
                         </button>
-                        <button
-                          onClick={() =>
-                            navigate(`/api-keys/${apiKey.id}/delete`)
-                          }
+                        {/* <button
+                          onClick={() => setDeletingApiKey(apiKey)}
                           className="text-red-600 hover:text-red-800"
                           title="Delete API Key"
                         >
                           <FaTrash />
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>
@@ -167,7 +205,7 @@ const ApiKeysTable = ({ apiKeys = [], isLoading = false }) => {
               })
             ) : (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center">
+                <td colSpan={8} className="px-6 py-4 text-center">
                   No API keys found.
                 </td>
               </tr>
@@ -175,6 +213,43 @@ const ApiKeysTable = ({ apiKeys = [], isLoading = false }) => {
           </tbody>
         </table>
       </div>
+
+      {/* Modals */}
+      {editingApiKey && (
+        <EditApiKeyModal
+          isOpen={!!editingApiKey}
+          apiKey={editingApiKey}
+          onClose={() => setEditingApiKey(null)}
+          onSuccess={() => {
+            setEditingApiKey(null);
+            onRefetch && onRefetch();
+          }}
+        />
+      )}
+
+      {deletingApiKey && (
+        <DeleteApiKeyModal
+          isOpen={!!deletingApiKey}
+          apiKey={deletingApiKey}
+          onClose={() => setDeletingApiKey(null)}
+          onSuccess={() => {
+            setDeletingApiKey(null);
+            onRefetch && onRefetch();
+          }}
+        />
+      )}
+
+      {regeneratingApiKey && (
+        <RegenerateApiKeyModal
+          isOpen={!!regeneratingApiKey}
+          apiKey={regeneratingApiKey}
+          onClose={() => setRegeneratingApiKey(null)}
+          onSuccess={() => {
+            setRegeneratingApiKey(null);
+            onRefetch && onRefetch();
+          }}
+        />
+      )}
     </div>
   );
 };

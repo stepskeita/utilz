@@ -12,7 +12,7 @@ const TopUpRequest = () => {
     limit: 10,
   });
   const [openRequestModal, setOpenRequestModal] = React.useState(false);
-  const { isLoading, data } = useTopUpRequestsQuery(filters);
+  const { isPending, data } = useTopUpRequestsQuery(filters);
   console.log(data);
 
   return (
@@ -28,7 +28,10 @@ const TopUpRequest = () => {
         </CustomButton>
       </div>
       <TopUpRequestFilters filters={filters} setFilters={setFilters} />
-      <TopUpRequestTable topUpRequests={data?.requests} isLoading={isLoading} />
+      <TopUpRequestTable
+        topUpRequests={data?.topUpRequests}
+        isPending={isPending}
+      />
       <CustomPagination
         pagination={data?.pagination}
         filters={filters}

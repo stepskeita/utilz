@@ -223,16 +223,50 @@ class ClientController {
   async getApiKeys(req, res, next) {
     try {
       const clientId = req.client.id;
+      const { search, status, service, page = 1, limit = 10 } = req.query;
 
-      const apiKeys = await ApiKey.findAll({
-        where: { clientId },
-        attributes: ['id', 'name', 'isActive', 'isAirtime', 'isCashpower', 'isBoth', 'createdAt', 'expiresAt'],
-        order: [['createdAt', 'DESC']]
+      // Build where clause
+      const whereClause = {
+        clientId,
+        ...(search && {
+          name: {
+            [Op.like]: `%${search}%`
+          }
+        }),
+        ...(status && {
+          isActive: status === 'active'
+        }),
+        ...(service && {
+          ...(service === 'airtime' && { isAirtime: true, isBoth: false }),
+          ...(service === 'cashpower' && { isCashpower: true, isBoth: false }),
+          ...(service === 'both' && { isBoth: true })
+        })
+      };
+
+      const options = {
+        page: parseInt(page),
+        limit: parseInt(limit)
+      };
+
+      const apiKeys = await ApiKey.findAndCountAll({
+        where: whereClause,
+        attributes: ['id', 'name', 'key', 'secretKey', 'isActive', 'isAirtime', 'isCashpower', 'isBoth', 'createdAt', 'expiresAt', 'lastUsedAt'],
+        order: [['createdAt', 'DESC']],
+        limit: options.limit,
+        offset: (options.page - 1) * options.limit
       });
 
       res.status(200).json({
         success: true,
-        data: apiKeys
+        data: {
+          apiKeys: apiKeys.rows,
+          pagination: {
+            total: apiKeys.count,
+            currentPage: options.page,
+            limit: options.limit,
+            totalPages: Math.ceil(apiKeys.count / options.limit),
+          }
+        }
       });
     } catch (error) {
       next(error);
@@ -250,12 +284,14 @@ class ClientController {
       const apiKey = await ApiKey.create({
         clientId,
         name,
+        isActive: false, // All new keys are inactive by default
         isAirtime: isAirtime || false,
         isCashpower: isCashpower || false,
         isBoth: isBoth || false,
         expiresAt,
         ipRestrictions,
-        key: ApiKey.generateKey()
+        key: ApiKey.generateKey(),
+        secretKey: ApiKey.generateSecretKey()
       });
 
       res.status(201).json({
@@ -286,6 +322,9 @@ class ClientController {
       const { id } = req.params;
       const updateData = req.body;
 
+      // Remove isActive from update data - only admins can control activation
+      const { isActive, ...allowedUpdateData } = updateData;
+
       const apiKey = await ApiKey.findOne({
         where: { id, clientId }
       });
@@ -294,7 +333,7 @@ class ClientController {
         throw createError(404, 'API key not found');
       }
 
-      await apiKey.update(updateData);
+      await apiKey.update(allowedUpdateData);
 
       res.status(200).json({
         success: true,
@@ -358,7 +397,8 @@ class ClientController {
       }
 
       const newKey = ApiKey.generateKey();
-      await apiKey.update({ key: newKey });
+      const newSecretKey = ApiKey.generateSecretKey();
+      await apiKey.update({ key: newKey, secretKey: newSecretKey });
 
       res.status(200).json({
         success: true,

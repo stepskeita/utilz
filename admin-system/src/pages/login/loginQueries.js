@@ -3,7 +3,7 @@ import API from "../../api/http-common";
 import toast from "react-hot-toast";
 
 export const useLoginMutation = () => useMutation({
-  mutationFn: async (loginData) => await API.post('/auth/login', loginData),
+  mutationFn: async (loginData) => await API.post('/admin/auth/login', loginData),
   mutationKey: ['login'],
 
   onError: (error) => {

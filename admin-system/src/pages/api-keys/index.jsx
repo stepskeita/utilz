@@ -1,20 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { useGetApiKeysQuery } from "../../api/queries";
 import ApiKeysTable from "./components/ApiKeysTable";
 import ApiKeyFilters from "./components/ApiKeyFilters";
 import CustomPagination from "../../components/generic/CustomPagination";
 import CustomCard from "../../components/generic/CustomCard";
 import CustomButton from "../../components/generic/CustomButton";
-import { useNavigate } from "react-router-dom";
+import CreateApiKeyModal from "./components/CreateApiKeyModal";
 
 const ApiKeysPage = () => {
   const [filters, setFilters] = React.useState({
     limit: 10,
     page: 1,
   });
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const { isLoading, data } = useGetApiKeysQuery(filters);
-  const navigate = useNavigate();
+  const { isPending, data, refetch } = useGetApiKeysQuery(filters);
 
   console.log("API Keys data:", data);
   return (
@@ -28,7 +28,7 @@ const ApiKeysPage = () => {
             </p>
           </div>
           <CustomButton
-            onClick={() => navigate("/api-keys/create")}
+            onClick={() => setShowCreateModal(true)}
             className="bg-blue-600 hover:bg-blue-700"
           >
             Create API Key
@@ -37,12 +37,26 @@ const ApiKeysPage = () => {
       </CustomCard>
       <ApiKeyFilters filters={filters} setFilters={setFilters} />
 
-      <ApiKeysTable isLoading={isLoading} apiKeys={data?.apiKeys || []} />
+      <ApiKeysTable
+        isLoading={isPending}
+        apiKeys={data?.apiKeys || []}
+        onRefetch={refetch}
+      />
       <CustomPagination
         className="mt-4"
         filters={filters}
         setFilters={setFilters}
         pagination={data?.pagination}
+      />
+
+      {/* Create API Key Modal */}
+      <CreateApiKeyModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          setShowCreateModal(false);
+          refetch();
+        }}
       />
     </div>
   );

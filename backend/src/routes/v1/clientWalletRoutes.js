@@ -1,9 +1,7 @@
 
 import express from 'express';
 import {
-  createTopUpRequestSchema,
-  approveTopUpRequestSchema,
-  rejectTopUpRequestSchema
+  createTopUpRequestSchema
 } from '../../utils/validations/clientValidators.js';
 import requestValidator from '../../middlewares/requestValidator.js';
 import { authenticateClient } from '../../middlewares/clientAuthMiddleware.js';
@@ -75,48 +73,8 @@ router.delete('/top-up-request/:requestId',
 );
 
 
-// Admin routes for managing top-up requests
-/**
- * @route GET /api/v1/client/wallet/admin/top-up-requests
- * @desc Get all top-up requests (Admin)
- * @access Protected (Admin)
- */
-router.get('/admin/top-up-requests',
-  authenticateJWT,
-  clientWalletController.getAllTopUpRequests
-);
-
-/**
- * @route GET /api/v1/client/wallet/admin/top-up-requests
- * @desc Get all top-up requests (Admin)
- * @access Protected (Admin)
- */
-router.get('/admin/top-up-request/:id',
-  authenticateJWT,
-  clientWalletController.getAdminTopUpRequest
-);
-
-/**
- * @route POST /api/v1/client/wallet/admin/top-up-request/:id/approve
- * @desc Approve top-up request (Admin)
- * @access Protected (Admin)
- */
-router.post('/admin/top-up-request/:id/approve',
-  authenticateJWT,
-  requestValidator(approveTopUpRequestSchema),
-  clientWalletController.approveTopUpRequest
-);
-
-/**
- * @route POST /api/v1/client/wallet/admin/top-up-request/:id/reject
- * @desc Reject top-up request (Admin)
- * @access Protected (Admin)
- */
-router.post('/admin/top-up-request/:id/reject',
-  authenticateJWT,
-  requestValidator(rejectTopUpRequestSchema),
-  clientWalletController.rejectTopUpRequest
-);
+// Note: Admin routes for managing top-up requests are handled in adminRoutes.js
+// Admin endpoints: /api/v1/admin/top-up-requests/*
 
 /**
  * @route GET /api/v1/client/wallet/admin/client/:clientId/transactions

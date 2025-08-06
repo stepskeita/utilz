@@ -3,7 +3,7 @@ import API from "../../api/http-common";
 import toast from "react-hot-toast";
 
 export const useChangePasswordMutation = () => useMutation({
-  mutationFn: async (data) => await API.post('/client/auth/change-password', data),
+  mutationFn: async (data) => await API.post('/admin/auth/change-password', data),
   mutationKey: ['changePassword'],
 
   onError: (error) => {

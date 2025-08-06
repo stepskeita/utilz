@@ -9,6 +9,7 @@ import requestValidator from '../../middlewares/requestValidator.js';
 import { authenticateClient } from '../../middlewares/clientAuthMiddleware.js';
 import clientAuthController from '../../controllers/clientAuthController.js';
 import clientController from '../../controllers/clientController.js';
+import clientWalletRoutes from './clientWalletRoutes.js';
 
 const router = express.Router();
 
@@ -107,26 +108,7 @@ router.post('/change-password',
 );
 
 // ==================== WALLET ROUTES ====================
-
-/**
- * @route GET /api/v1/client/wallet/balance
- * @desc Get client wallet balance
- * @access Protected (Client)
- */
-router.get('/wallet/balance',
-  authenticateClient,
-  clientController.getWalletBalance
-);
-
-/**
- * @route GET /api/v1/client/wallet/transactions
- * @desc Get client wallet transactions
- * @access Protected (Client)
- */
-router.get('/wallet/transactions',
-  authenticateClient,
-  clientController.getWalletTransactions
-);
+// Note: Wallet routes are now handled by clientWalletRoutes.js
 
 /**
  * @route GET /api/v1/client/transactions
@@ -137,6 +119,13 @@ router.get('/transactions',
   authenticateClient,
   clientController.getTransactionHistory
 );
+
+// ==================== WALLET MANAGEMENT ROUTES ====================
+
+/**
+ * Mount wallet management routes (top-up requests, etc.)
+ */
+router.use('/wallet', clientWalletRoutes);
 
 // ==================== API KEY ROUTES ====================
 
@@ -150,15 +139,7 @@ router.get('/api-keys',
   clientController.getApiKeys
 );
 
-/**
- * @route POST /api/v1/client/api-keys
- * @desc Create new API key
- * @access Protected (Client)
- */
-router.post('/api-keys',
-  authenticateClient,
-  clientController.createApiKey
-);
+// API key creation removed - only admins can create API keys for clients
 
 /**
  * @route PUT /api/v1/client/api-keys/:id

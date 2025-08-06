@@ -63,9 +63,7 @@ const TopUpRequestTable = ({ topUpRequests = [], isLoading = false }) => {
                   <td className="px-6 py-4">
                     <button
                       className="text-blue-600  mr-4"
-                      onClick={() =>
-                        navigate(`/top-up-request/details`, { state: request })
-                      }
+                      onClick={() => navigate(`/top-up-request/${request.id}`)}
                       title="View Details"
                     >
                       <FaEye className="inline mr-1" />

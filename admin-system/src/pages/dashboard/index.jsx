@@ -1,7 +1,7 @@
 import React from "react";
 import {
   useGetGamSwitchBalance,
-  useRecentTransactionsQuery,
+  useRecentTopUpRequestsQuery,
 } from "./dashboardQueries";
 
 import CustomButton from "../../components/generic/CustomButton";
@@ -9,12 +9,12 @@ import { useNavigate } from "react-router-dom";
 import RecentTopUps from "./components/RecentTopUps";
 
 const DashboardPage = () => {
-  const { data: gamswitchData, isLoading: gamswitchLoading } =
+  const { data: gamswitchData, isPending: gamswitchLoading } =
     useGetGamSwitchBalance();
   const navigate = useNavigate();
 
-  const { data: recentTransactions, isLoading: recentTransactionsLoading } =
-    useRecentTransactionsQuery();
+  const { data: recentTopUpRequests, isPending: recentTopUpRequestsLoading } =
+    useRecentTopUpRequestsQuery();
 
   return (
     <main className="flex-1 p-6 space-y-6">
@@ -28,10 +28,10 @@ const DashboardPage = () => {
               <p className="text-gray-500 text-3xl font-bold mt-2">
                 {gamswitchLoading
                   ? "Loading..."
-                  : gamswitchData
-                  ? `${gamswitchData.currency === "GMD" ? "D" : "$"}${
-                      gamswitchData.balance?.[0]?.amount || 0
-                    }`
+                  : gamswitchData?.balance
+                  ? `${
+                      gamswitchData.currency === "GMD" ? "D" : "$"
+                    }${parseFloat(gamswitchData.balance).toFixed(2)}`
                   : "--"}
               </p>
             </div>
@@ -47,8 +47,8 @@ const DashboardPage = () => {
       </div>
 
       <RecentTopUps
-        recentTopups={recentTransactions?.data || []}
-        isLoading={recentTransactionsLoading}
+        recentTopups={recentTopUpRequests?.topUpRequests || []}
+        isLoading={recentTopUpRequestsLoading}
       />
     </main>
   );

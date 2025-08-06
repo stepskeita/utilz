@@ -9,24 +9,25 @@ import APIKeys from "./components/APIKeys";
 import WalletTransactions from "./components/WalletTransactions";
 import CustomButton from "../../components/generic/CustomButton";
 import { useNavigate } from "react-router-dom";
+import { formatCurrency } from "../../helperFunctions";
 
 const DashboardPage = () => {
   // Fetch wallet balance
-  const { data: walletData, isLoading: walletLoading } =
+  const { data: walletData, isPending: walletLoading } =
     useGetWalletBalanceQuery();
 
   // Fetch API keys
-  const { data: apiKeyData, isLoading: apiKeyLoading } = useGetApiKeysQuery();
+  const { data: apiKeyData, isPending: apiKeyLoading } = useGetApiKeysQuery();
 
   // Fetch recent transactions
-  const { data: transactionsData, isLoading: transactionsLoading } =
+  const { data: transactionsData, isPending: transactionsLoading } =
     useGetTransactionHistoryQuery({
       limit: 5,
       page: 1,
     });
 
   // Fetch usage statistics
-  const { data: usageStats, isLoading: statsLoading } = useGetUsageStatsQuery();
+  const { data: usageStats, isPending: statsLoading } = useGetUsageStatsQuery();
 
   const navigate = useNavigate();
 
@@ -42,9 +43,7 @@ const DashboardPage = () => {
               <p className="text-gray-500 text-3xl font-bold mt-2">
                 {walletLoading
                   ? "Loading..."
-                  : walletData
-                  ? `D${walletData.balance.toFixed(2)}`
-                  : "--"}
+                  : formatCurrency(walletData?.balance)}
               </p>
             </div>
             <CustomButton
@@ -82,7 +81,7 @@ const DashboardPage = () => {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Total Spent</span>
                 <span className="font-semibold text-green-600">
-                  D{usageStats?.totalSpent?.toFixed(2) || "0.00"}
+                  {formatCurrency(usageStats?.totalSpent)}
                 </span>
               </div>
             </div>
@@ -90,7 +89,7 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      <APIKeys apiKeys={apiKeyData || []} />
+      <APIKeys apiKeys={apiKeyData?.apiKeys || []} />
 
       <WalletTransactions
         transactionsData={transactionsData?.transactions}
