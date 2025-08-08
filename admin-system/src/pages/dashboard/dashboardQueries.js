@@ -27,3 +27,15 @@ export const useRecentTopUpRequestsQuery = (limit = 5) =>
       return res.data?.data || {};
     },
   });
+
+
+
+
+export const useGetUsageStatsQuery = () =>
+  useQuery({
+    queryKey: ['usage-analytics'],
+    queryFn: async () => {
+      const res = await API.get('/admin/analytics');
+      return res.data?.data;
+    },
+  });

@@ -41,13 +41,7 @@ export const useCreateClientMutation = () => {
       const res = await API.post('/admin/clients', clientData);
       return res.data?.data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(['clients']);
-      toast.success('Client created successfully');
-    },
-    onError: (error) => {
-      toast.error(error?.response?.data?.message || 'Failed to create client');
-    },
+
 
   });
 };
@@ -61,14 +55,7 @@ export const useUpdateClientMutation = () => {
       const res = await API.put(`/admin/clients/${clientId}`, clientData);
       return res.data?.data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(['clients']);
-      queryClient.invalidateQueries(['client']);
-      toast.success('Client updated successfully');
-    },
-    onError: (error) => {
-      toast.error(error?.response?.data?.message || 'Failed to update client');
-    },
+
 
   });
 };
@@ -82,13 +69,7 @@ export const useDeleteClientMutation = () => {
       const res = await API.delete(`/admin/clients/${clientId}`);
       return res.data?.data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(['clients']);
-      toast.success('Client deleted successfully');
-    },
-    onError: (error) => {
-      toast.error(error?.response?.data?.message || 'Failed to delete client');
-    },
+
 
   });
 };

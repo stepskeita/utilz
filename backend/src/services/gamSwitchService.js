@@ -110,6 +110,9 @@ class GamSwitchService {
         };
       }
     } catch (error) {
+      console.log(
+        err?.response
+      );
       console.error('GamSwitch API error:', error.response?.data || error.message);
       return {
         success: false,
@@ -136,6 +139,7 @@ class GamSwitchService {
 
       const token = await this.getAccessToken();
 
+
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
@@ -144,10 +148,15 @@ class GamSwitchService {
         'timestamp': timestamp
       };
 
-      const response = await axios.get(
+      const response = await axios.post(
         `${this.baseURL}/api/balance/${this.interchange}`,
+        {
+          Amount: "0"
+        },
         { headers }
       );
+
+
 
       if (response.data.responseCode === '00') {
         return {
@@ -166,6 +175,7 @@ class GamSwitchService {
         };
       }
     } catch (error) {
+
       console.error('GamSwitch balance check error:', error.response?.data || error.message);
       return {
         success: false,

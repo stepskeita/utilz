@@ -2,9 +2,15 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FiEdit, FiTrash2, FiEye } from "react-icons/fi";
 import moment from "moment";
+import { useDeleteClientMutation } from "../clientQueries";
+import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import Swal from "sweetalert2";
 
 const ClientTable = ({ clients = [], isPending = false, onEdit }) => {
   const navigate = useNavigate();
+
+  const deleteClientMutation = useDeleteClientMutation();
 
   const getStatusBadge = (isActive) => (
     <span
@@ -39,6 +45,36 @@ const ClientTable = ({ clients = [], isPending = false, onEdit }) => {
     const balance = parseFloat(client.wallet.balance || 0);
     return `D${balance.toFixed(2)}`;
   };
+
+  const queryClient = useQueryClient();
+
+  const handleDeleteClient = async (clientId) => {
+    try {
+      const { isConfirmed } = await Swal.fire({
+        title: "Are you sure?",
+        text: "This action cannot be undone.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "No, cancel!",
+      });
+      if (isConfirmed) {
+        await deleteClientMutation.mutateAsync(clientId, {
+          onError: (err) => {
+            toast.error(
+              err?.response?.data?.message || "Failed to delete client"
+            );
+          },
+          onSuccess: () => {
+            queryClient.invalidateQueries(["clients"]);
+            toast.success("Client deleted successfully");
+          },
+        });
+      }
+    } catch (error) {}
+  };
+
+  // Call the delete client mutation here
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -146,7 +182,9 @@ const ClientTable = ({ clients = [], isPending = false, onEdit }) => {
                         <FiEye className="w-4 h-4" />
                       </button>
                       <button
-                        className="p-1 text-red-600 hover:text-red-900"
+                        disabled={deleteClientMutation.isPending}
+                        onClick={() => handleDeleteClient(client.id)}
+                        className="p-1 text-red-600 hover:text-red-900 disabled:opacity-50"
                         title="Delete Client"
                       >
                         <FiTrash2 className="w-4 h-4" />

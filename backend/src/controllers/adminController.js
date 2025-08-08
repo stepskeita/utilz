@@ -3,6 +3,7 @@ import { createClient as createClientService, getClientUsageStats } from '../ser
 import { Client, ApiKey, UtilityTransaction, sequelize } from '../models/index.js';
 import createError from 'http-errors';
 import { Op } from 'sequelize';
+import gamSwitchService from '../services/gamSwitchService.js';
 
 class AdminController {
   /**
@@ -727,6 +728,7 @@ class AdminController {
    */
   async checkBalance(req, res, next) {
     try {
+
       // This would integrate with the balance monitoring service
       res.status(200).json({
         success: true,
@@ -742,14 +744,20 @@ class AdminController {
    */
   async getBalanceStatus(req, res, next) {
     try {
+
+
+
+      const balance = await gamSwitchService.checkBalance();
+
+      console.log(
+        "Balance:",
+        balance?.data?.balance,
+      );
+
       // This would return current balance status
       res.status(200).json({
         success: true,
-        data: {
-          currentBalance: 0,
-          status: 'normal',
-          lastChecked: new Date()
-        }
+        data: balance?.data?.balance?.[0] || {}
       });
     } catch (error) {
       next(error);

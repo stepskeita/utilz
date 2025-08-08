@@ -3,18 +3,30 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   useGetClientByIdQuery,
   useGetClientUsageStatsQuery,
+  useUpdateClientMutation,
 } from "../clientQueries";
 import CustomButton from "../../../components/generic/CustomButton";
 import IsLoading from "../../../components/generic/IsLoading";
 import IsError from "../../../components/generic/IsError";
-import { FiArrowLeft, FiEdit, FiTrash2, FiEye, FiEyeOff } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiEdit,
+  FiTrash2,
+  FiEye,
+  FiEyeOff,
+  FiCheckCircle,
+} from "react-icons/fi";
 import moment from "moment";
+import { useQueryClient } from "@tanstack/react-query";
+import Swal from "sweetalert2";
+import toast from "react-hot-toast";
+import { twMerge } from "tailwind-merge";
 
 const ClientDetailsPage = () => {
   const { clientId } = useParams();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-
+  const updateClientMutation = useUpdateClientMutation();
+  const queryClient = useQueryClient();
   const {
     data: clientData,
     isPending,
@@ -59,6 +71,42 @@ const ClientDetailsPage = () => {
     );
   };
 
+  const handleToggleActivation = async (client) => {
+    try {
+      const { isConfirmed } = await Swal.fire({
+        title: "Are you sure?",
+        text: "Client will be deactivated.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, deactivate it!",
+        cancelButtonText: "No, cancel!",
+      });
+      if (isConfirmed) {
+        await updateClientMutation.mutateAsync(
+          {
+            clientId: client?.id,
+            clientData: { isActive: !client.isActive },
+          },
+          {
+            onError: (err) => {
+              toast.error(
+                err?.response?.data?.message || "Failed to deactivate client"
+              );
+            },
+            onSuccess: () => {
+              queryClient.invalidateQueries(["client"]);
+              toast.success(
+                client?.isActive
+                  ? "Client deactivated successfully"
+                  : "Client activated successfully"
+              );
+            },
+          }
+        );
+      }
+    } catch (error) {}
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -73,7 +121,6 @@ const ClientDetailsPage = () => {
           </CustomButton>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
-            <p className="text-gray-600">Client ID: {client.id}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -326,16 +373,23 @@ const ClientDetailsPage = () => {
                 <FiEdit className="w-4 h-4" />
                 Edit Client
               </CustomButton>
+
               <CustomButton
-                onClick={() => navigate(`/transactions?clientId=${clientId}`)}
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700"
+                onClick={() => handleToggleActivation(client)}
+                className={twMerge(
+                  "w-full flex items-center justify-center gap-2",
+                  client.isActive
+                    ? "bg-red-100 text-red-800 hover:bg-red-200"
+                    : "bg-green-100 text-green-800 hover:bg-green-200"
+                )}
+                disabled={updateClientMutation.isPending}
               >
-                <FiEye className="w-4 h-4" />
-                View Transactions
-              </CustomButton>
-              <CustomButton className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700">
-                <FiTrash2 className="w-4 h-4" />
-                Deactivate Client
+                {client.isActive ? (
+                  <FiTrash2 className="w-4 h-4" />
+                ) : (
+                  <FiCheckCircle className="w-4 h-4" />
+                )}
+                {client.isActive ? "Deactivate Client" : "Activate Client"}
               </CustomButton>
             </div>
           </div>
