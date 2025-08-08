@@ -38,6 +38,31 @@ export const apiKeyAuth = async (req, res, next) => {
       });
     }
 
+    // Check if API key is active
+    if (!keyRecord.isActive) {
+      // Send email notification about inactive API key (fire-and-forget)
+      emailService.sendClientErrorNotification(
+        keyRecord.Client,
+        'API_KEY_INACTIVE',
+        'API Key is inactive',
+        {
+          endpoint: req.originalUrl,
+          method: req.method,
+          ipAddress: req.ip || req.connection.remoteAddress,
+          apiKeyName: keyRecord.name
+        }
+      ).catch(() => { }); // Silent fail - don't block the response
+
+      return res.status(503).json({
+        success: false,
+        message: 'Service temporarily unavailable. Please try again later.',
+        error: {
+          code: 'SERVICE_UNAVAILABLE',
+          status: 503
+        }
+      });
+    }
+
     // Explicit check for client status (additional safety check)
     if (!keyRecord.Client.isActive) {
       // Send email notification about inactive client (fire-and-forget)

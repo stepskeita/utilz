@@ -6,7 +6,6 @@ class AirtimeController {
    */
   async initiateAirtime(req, res, next) {
     try {
-      console.log(req.body)
       const { phoneNumber, provider, amount } = req.body;
 
       // Create request context with client info from API key auth
@@ -24,10 +23,8 @@ class AirtimeController {
         { phoneNumber, provider, amount },
         requestContext
       );
-      console.log(result)
 
-      // Always return success response format, even for failed transactions
-      // This prevents customers from knowing specific error details
+      // Return appropriate response based on transaction result
       if (result.status === 'success') {
         res.status(200).json({
           success: true,
@@ -35,14 +32,15 @@ class AirtimeController {
           data: result
         });
       } else {
-        // For failed transactions, return generic message
+        // For failed transactions, return error response
         // The actual error details have been emailed to the client
-        res.status(503).json({
+        res.status(400).json({
           success: false,
-          message: 'Service temporarily unavailable. Please try again later.',
+          message: result.errorMessage || 'Transaction failed. Please check your account status and try again.',
           error: {
-            code: 'SERVICE_UNAVAILABLE',
-            status: 503
+            code: 'TRANSACTION_FAILED',
+            status: 400,
+            reference: result.reference || null
           }
         });
       }
